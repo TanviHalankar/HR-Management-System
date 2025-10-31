@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/employees")
-public class gEmployeeController {
+public class EmployeeController {
     @Autowired
     private EmployeeRepository employeeRepository;
 
