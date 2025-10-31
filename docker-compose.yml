@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  # Config Server
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - hrms-network
+
+  # Eureka Server
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - hrms-network
+    depends_on:
+      - config-server
+    environment:
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+  # User Service DB
+  userdb:
+    image: mysql:8.0
+    container_name: userdb
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=userdb
+    ports:
+      - "3310:3306"
+    networks:
+      - hrms-network
+
+  # User Service
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8101:8101"
+    networks:
+      - hrms-network
+    depends_on:
+      - eureka-server
+      - userdb
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://userdb:3306/userdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+  # Employee Service DB
+  employeedb:
+    image: mysql:8.0
+    container_name: employeedb
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=employeedb
+    ports:
+      - "3307:3306"
+    networks:
+      - hrms-network
+
+  # Employee Service
+  employee-service:
+    build: ./employee-service
+    container_name: employee-service
+    ports:
+      - "8102:8102"
+    networks:
+      - hrms-network
+    depends_on:
+      - eureka-server
+      - employeedb
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://employeedb:3306/employeedb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+  # Payroll Service DB
+  payrolldb:
+    image: mysql:8.0
+    container_name: payrolldb
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=payrolldb
+    ports:
+      - "3308:3306"
+    networks:
+      - hrms-network
+
+  # Payroll Service
+  payroll-service:
+    build: ./payroll-service
+    container_name: payroll-service
+    ports:
+      - "8103:8103"
+    networks:
+      - hrms-network
+    depends_on:
+      - eureka-server
+      - payrolldb
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://payrolldb:3306/payrolldb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+  # Attendance Service DB
+  attendancedb:
+    image: mysql:8.0
+    container_name: attendancedb
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=attendancedb
+    ports:
+      - "3309:3306"
+    networks:
+      - hrms-network
+
+  # Attendance Service
+  attendance-service:
+    build: ./attendance-service
+    container_name: attendance-service
+    ports:
+      - "8104:8104"
+    networks:
+      - hrms-network
+    depends_on:
+      - eureka-server
+      - attendancedb
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://attendancedb:3306/attendancedb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - hrms-network
+    depends_on:
+      - eureka-server
+      - user-service
+      - employee-service
+      - payroll-service
+      - attendance-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+networks:
+  hrms-network:
+    driver: bridge
