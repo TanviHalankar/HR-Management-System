@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: employeedb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employeedb
+  labels:
+    app: employeedb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employeedb
+  template:
+    metadata:
+      labels:
+        app: employeedb
+    spec:
+      containers:
+      - name: employeedb
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "root"
+        - name: MYSQL_DATABASE
+          value: "employeedb"
+        volumeMounts:
+        - name: employeedb-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: employeedb-storage
+        persistentVolumeClaim:
+          claimName: employeedb-pvc

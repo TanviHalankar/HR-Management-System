@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payroll-service
+spec:
+  selector:
+    app: payroll-service
+  ports:
+  - port: 8103
+    targetPort: 8103
+  type: ClusterIP

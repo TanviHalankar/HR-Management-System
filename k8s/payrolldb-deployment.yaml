@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: payrolldb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payrolldb
+  labels:
+    app: payrolldb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payrolldb
+  template:
+    metadata:
+      labels:
+        app: payrolldb
+    spec:
+      containers:
+      - name: payrolldb
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "root"
+        - name: MYSQL_DATABASE
+          value: "payrolldb"
+        volumeMounts:
+        - name: payrolldb-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: payrolldb-storage
+        persistentVolumeClaim:
+          claimName: payrolldb-pvc

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payroll-service
+  labels:
+    app: payroll-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payroll-service
+  template:
+    metadata:
+      labels:
+        app: payroll-service
+    spec:
+      containers:
+      - name: payroll-service
+        image: payroll-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8103
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://payrolldb:3306/payrolldb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "root"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "root"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http://eureka-server:8761/eureka/"
+        - name: SPRING_CLOUD_CONFIG_URI
+          value: "http://config-server:8888"
