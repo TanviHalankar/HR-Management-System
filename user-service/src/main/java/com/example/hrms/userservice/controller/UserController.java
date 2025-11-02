@@ -3,6 +3,7 @@ package com.example.hrms.userservice.controller;
 import com.example.hrms.userservice.entity.User;
 import com.example.hrms.userservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,25 +33,53 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
-        return userRepository.findById(id)
-                .map(user -> {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+        try {
+            Optional<User> optionalUser = userRepository.findById(id);
+            
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                
+                if (updatedUser.getName() != null) {
                     user.setName(updatedUser.getName());
+                }
+                if (updatedUser.getEmail() != null) {
                     user.setEmail(updatedUser.getEmail());
+                }
+                if (updatedUser.getRole() != null) {
                     user.setRole(updatedUser.getRole());
+                }
+                if (updatedUser.getPassword() != null) {
                     user.setPassword(updatedUser.getPassword());
-                    return ResponseEntity.ok(userRepository.save(user));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                }
+                
+                User savedUser = userRepository.save(user);
+                return ResponseEntity.ok(savedUser);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error updating user: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    userRepository.delete(user);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try {
+            Optional<User> optionalUser = userRepository.findById(id);
+            
+            if (optionalUser.isPresent()) {
+                userRepository.delete(optionalUser.get());
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error deleting user: " + e.getMessage());
+        }
     }
 }

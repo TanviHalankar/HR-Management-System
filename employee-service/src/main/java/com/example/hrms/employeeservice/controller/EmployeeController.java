@@ -12,7 +12,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/employees")
-@CrossOrigin(origins = "*")
 public class EmployeeController {
     @Autowired
     private EmployeeRepository employeeRepository;

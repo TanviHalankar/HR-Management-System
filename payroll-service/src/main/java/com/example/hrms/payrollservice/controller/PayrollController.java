@@ -3,6 +3,7 @@ package com.example.hrms.payrollservice.controller;
 import com.example.hrms.payrollservice.entity.Payroll;
 import com.example.hrms.payrollservice.repository.PayrollRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,26 +33,56 @@ public class PayrollController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Payroll> updatePayroll(@PathVariable Long id, @RequestBody Payroll updatedPayroll) {
-        return payrollRepository.findById(id)
-                .map(payroll -> {
+    public ResponseEntity<?> updatePayroll(@PathVariable Long id, @RequestBody Payroll updatedPayroll) {
+        try {
+            Optional<Payroll> optionalPayroll = payrollRepository.findById(id);
+            
+            if (optionalPayroll.isPresent()) {
+                Payroll payroll = optionalPayroll.get();
+                
+                if (updatedPayroll.getEmployeeId() != null) {
                     payroll.setEmployeeId(updatedPayroll.getEmployeeId());
+                }
+                if (updatedPayroll.getBasicPay() != null) {
                     payroll.setBasicPay(updatedPayroll.getBasicPay());
+                }
+                if (updatedPayroll.getBonus() != null) {
                     payroll.setBonus(updatedPayroll.getBonus());
+                }
+                if (updatedPayroll.getDeductions() != null) {
                     payroll.setDeductions(updatedPayroll.getDeductions());
+                }
+                if (updatedPayroll.getNetSalary() != null) {
                     payroll.setNetSalary(updatedPayroll.getNetSalary());
-                    return ResponseEntity.ok(payrollRepository.save(payroll));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                }
+                
+                Payroll savedPayroll = payrollRepository.save(payroll);
+                return ResponseEntity.ok(savedPayroll);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Payroll record with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error updating payroll: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePayroll(@PathVariable Long id) {
-        return payrollRepository.findById(id)
-                .map(payroll -> {
-                    payrollRepository.delete(payroll);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<?> deletePayroll(@PathVariable Long id) {
+        try {
+            Optional<Payroll> optionalPayroll = payrollRepository.findById(id);
+            
+            if (optionalPayroll.isPresent()) {
+                payrollRepository.delete(optionalPayroll.get());
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Payroll record with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error deleting payroll: " + e.getMessage());
+        }
     }
 }
