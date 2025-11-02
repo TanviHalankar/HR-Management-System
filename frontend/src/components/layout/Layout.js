@@ -20,9 +20,12 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${isSidebarOpen ? 240 : 0}px)` },
+          p: { xs: 2, sm: 3, md: 4 },
+          width: { sm: `calc(100% - ${isSidebarOpen ? 260 : 0}px)` },
           marginTop: '64px',
+          minHeight: 'calc(100vh - 64px)',
+          backgroundColor: 'transparent',
+          transition: 'all 0.3s ease',
         }}
       >
         <Outlet />

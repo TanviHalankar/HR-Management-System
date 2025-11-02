@@ -128,33 +128,61 @@ const Employees = () => {
     }
 
     return (
-        <Box sx={{ width: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
-                    Employees Management
-                </Typography>
+        <Box sx={{ width: '100%', minHeight: '100vh', background: 'transparent' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Box>
+                    <Typography 
+                        variant="h3" 
+                        component="h1" 
+                        sx={{ 
+                            fontWeight: 700,
+                            mb: 1,
+                            background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            fontSize: { xs: '2rem', md: '2.5rem' }
+                        }}
+                    >
+                        Employees Management
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
+                        Manage employee records, view details, and perform CRUD operations
+                    </Typography>
+                </Box>
                 <Button
                     variant="contained"
                     color="primary"
                     startIcon={<AddIcon />}
                     onClick={() => setOpen(true)}
-                    sx={{ borderRadius: 2 }}
+                    sx={{ 
+                        borderRadius: 2,
+                        px: 3,
+                        py: 1.5,
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        boxShadow: '0 4px 14px rgba(25, 118, 210, 0.4)',
+                        '&:hover': {
+                            boxShadow: '0 6px 20px rgba(25, 118, 210, 0.5)',
+                            transform: 'translateY(-2px)'
+                        },
+                        transition: 'all 0.3s ease'
+                    }}
                 >
                     Add Employee
                 </Button>
             </Box>
 
-            <Paper elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+            <Paper elevation={6} sx={{ borderRadius: 3, overflow: 'hidden', background: 'white' }}>
                 <TableContainer>
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                                <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Designation</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }}>Salary</TableCell>
-                                <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
+                            <TableRow sx={{ backgroundColor: 'rgba(25, 118, 210, 0.08)' }}>
+                                <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#1976d2' }}>ID</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#1976d2' }}>Name</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#1976d2' }}>Designation</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#1976d2' }}>Department</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#1976d2' }}>Salary</TableCell>
+                                <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#1976d2' }} align="center">Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -168,23 +196,63 @@ const Employees = () => {
                                 </TableRow>
                             ) : (
                                 employees.map((employee) => (
-                                    <TableRow key={employee.id} hover>
+                                    <TableRow 
+                                        key={employee.id} 
+                                        hover
+                                        sx={{ 
+                                            '&:hover': { 
+                                                backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                                                cursor: 'pointer'
+                                            }
+                                        }}
+                                    >
                                         <TableCell>{employee.id}</TableCell>
-                                        <TableCell sx={{ fontWeight: 500 }}>{employee.name}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>{employee.name}</TableCell>
                                         <TableCell>{employee.designation}</TableCell>
-                                        <TableCell>{employee.department}</TableCell>
-                                        <TableCell>${parseFloat(employee.salary || 0).toFixed(2)}</TableCell>
+                                        <TableCell>
+                                            <Box 
+                                                component="span" 
+                                                sx={{ 
+                                                    px: 1.5, 
+                                                    py: 0.5, 
+                                                    borderRadius: 1, 
+                                                    backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                                                    color: '#1976d2',
+                                                    fontWeight: 500,
+                                                    fontSize: '0.875rem'
+                                                }}
+                                            >
+                                                {employee.department}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: '#2e7d32' }}>
+                                            ${parseFloat(employee.salary || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </TableCell>
                                         <TableCell align="center">
                                             <IconButton
                                                 color="primary"
                                                 onClick={() => setEditEmployee(employee)}
-                                                sx={{ mr: 1 }}
+                                                sx={{ 
+                                                    mr: 1,
+                                                    '&:hover': { 
+                                                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                                                        transform: 'scale(1.1)'
+                                                    },
+                                                    transition: 'all 0.2s ease'
+                                                }}
                                             >
                                                 <EditIcon />
                                             </IconButton>
                                             <IconButton
                                                 color="error"
                                                 onClick={() => handleDeleteEmployee(employee.id)}
+                                                sx={{
+                                                    '&:hover': { 
+                                                        backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                                                        transform: 'scale(1.1)'
+                                                    },
+                                                    transition: 'all 0.2s ease'
+                                                }}
                                             >
                                                 <DeleteIcon />
                                             </IconButton>
