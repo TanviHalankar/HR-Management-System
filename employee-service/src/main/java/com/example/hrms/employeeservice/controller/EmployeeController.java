@@ -3,6 +3,7 @@ package com.example.hrms.employeeservice.controller;
 import com.example.hrms.employeeservice.entity.Employee;
 import com.example.hrms.employeeservice.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/employees")
+@CrossOrigin(origins = "*")
 public class EmployeeController {
     @Autowired
     private EmployeeRepository employeeRepository;
@@ -32,25 +34,54 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee updatedEmployee) {
-        return employeeRepository.findById(id)
-                .map(employee -> {
+    public ResponseEntity<?> updateEmployee(@PathVariable Long id, @RequestBody Employee updatedEmployee) {
+        try {
+            Optional<Employee> optionalEmployee = employeeRepository.findById(id);
+            
+            if (optionalEmployee.isPresent()) {
+                Employee employee = optionalEmployee.get();
+                
+                // Update fields only if provided
+                if (updatedEmployee.getName() != null) {
                     employee.setName(updatedEmployee.getName());
+                }
+                if (updatedEmployee.getDesignation() != null) {
                     employee.setDesignation(updatedEmployee.getDesignation());
+                }
+                if (updatedEmployee.getDepartment() != null) {
                     employee.setDepartment(updatedEmployee.getDepartment());
+                }
+                if (updatedEmployee.getSalary() != null) {
                     employee.setSalary(updatedEmployee.getSalary());
-                    return ResponseEntity.ok(employeeRepository.save(employee));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                }
+                
+                Employee savedEmployee = employeeRepository.save(employee);
+                return ResponseEntity.ok(savedEmployee);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Employee with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error updating employee: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
-        return employeeRepository.findById(id)
-                .map(employee -> {
-                    employeeRepository.delete(employee);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+        try {
+            Optional<Employee> optionalEmployee = employeeRepository.findById(id);
+            
+            if (optionalEmployee.isPresent()) {
+                employeeRepository.delete(optionalEmployee.get());
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Employee with id " + id + " not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error deleting employee: " + e.getMessage());
+        }
     }
 }
