@@ -169,6 +169,223 @@ npm start
 
 ---
 
+## ☸️ Kubernetes Deployment
+
+### Prerequisites
+- **Minikube** installed and running
+- **kubectl** configured
+- **Docker** installed
+
+### Quick Start with Kubernetes
+
+#### Step 1: Start Minikube
+```powershell
+# Start minikube with sufficient resources
+minikube start --memory=3000 --cpus=2
+
+# Configure Docker to use minikube's Docker daemon
+minikube docker-env | Invoke-Expression
+```
+
+#### Step 2: Build Docker Images
+```powershell
+# Build all service images
+cd config-server; docker build -t config-server:latest .
+cd ../eureka-server; docker build -t eureka-server:latest .
+cd ../api-gateway; docker build -t api-gateway:latest .
+cd ../user-service; docker build -t user-service:latest .
+cd ../employee-service; docker build -t employee-service:latest .
+cd ../payroll-service; docker build -t payroll-service:latest .
+cd ../attendance-service; docker build -t attendance-service:latest .
+cd ..
+```
+
+#### Step 3: Deploy to Kubernetes
+```powershell
+# Deploy all services
+kubectl apply -f k8s/
+
+# Check deployment status
+kubectl get pods
+kubectl get services
+```
+
+**Wait 2-3 minutes** for all pods to be ready.
+
+#### Step 4: Access Services
+
+**Get Minikube IP:**
+```powershell
+minikube ip
+# Example output: 192.168.49.2
+```
+
+**Access URLs:**
+
+**Via Port Forward (Recommended for Windows):**
+```powershell
+# Eureka Dashboard
+kubectl port-forward service/eureka-server 8761:8761
+# Then open: http://localhost:8761
+
+# API Gateway
+kubectl port-forward service/api-gateway 8080:8080
+# Then open: http://localhost:8080
+# Health: http://localhost:8080/actuator/health
+```
+
+**Via NodePort (If networking allows):**
+```
+Eureka Dashboard: http://192.168.49.2:30761
+API Gateway: http://192.168.49.2:30080
+API Gateway Health: http://192.168.49.2:30080/actuator/health
+```
+
+### Kubernetes Test URLs
+
+**Service Discovery:**
+- Eureka Dashboard: `http://localhost:8761` (port-forward) or `http://<minikube-ip>:30761` (NodePort)
+
+**API Gateway:**
+- Base URL: `http://localhost:8080` (port-forward) or `http://<minikube-ip>:30080` (NodePort)
+- Health Check: `http://localhost:8080/actuator/health` (port-forward) or `http://<minikube-ip>:30080/actuator/health` (NodePort)
+
+### Practical Demonstration Commands
+
+**Step 1: Check Cluster Status**
+```powershell
+# Check Minikube status
+minikube status
+
+# Check Kubernetes nodes
+kubectl get nodes
+
+# Check all pods
+kubectl get pods
+
+# Check all services
+kubectl get services
+```
+
+**Step 2: Get Minikube IP**
+```powershell
+minikube ip
+# Example output: 192.168.49.2
+```
+
+**Step 3: Test Eureka Dashboard (Port Forward)**
+```powershell
+# Terminal 1: Forward Eureka port
+kubectl port-forward service/eureka-server 8761:8761
+
+# Then open in browser: http://localhost:8761
+# Or test with:
+Invoke-WebRequest -Uri "http://localhost:8761" -UseBasicParsing
+```
+
+**Step 4: Test API Gateway (Port Forward)**
+```powershell
+# Terminal 2: Forward API Gateway port
+kubectl port-forward service/api-gateway 8080:8080
+
+# Test health endpoint
+Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing
+
+# Expected response: {"status":"UP","groups":["liveness","readiness"]}
+```
+
+**Step 5: Test Microservices Through API Gateway**
+```powershell
+# Test Employee Service
+Invoke-WebRequest -Uri "http://localhost:8080/employees" -UseBasicParsing
+
+# Test Attendance Service
+Invoke-WebRequest -Uri "http://localhost:8080/attendance" -UseBasicParsing
+
+# Test Payroll Service
+Invoke-WebRequest -Uri "http://localhost:8080/payroll" -UseBasicParsing
+
+# Test User Service
+Invoke-WebRequest -Uri "http://localhost:8080/users" -UseBasicParsing
+```
+
+**Step 6: Create Employee via API Gateway**
+```powershell
+$body = @{
+    name = "John Doe"
+    designation = "Software Engineer"
+    department = "IT"
+    salary = 75000
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8080/employees" -Method POST -Body $body -ContentType "application/json" -UseBasicParsing
+
+# Verify creation
+Invoke-WebRequest -Uri "http://localhost:8080/employees" -UseBasicParsing
+```
+
+**Step 7: View Pod Details**
+```powershell
+# Show pods with details
+kubectl get pods -o wide
+
+# Show specific pod details
+kubectl describe pod <pod-name>
+
+# View pod logs
+kubectl logs <pod-name>
+
+# View logs for all pods of a service
+kubectl logs -l app=api-gateway
+```
+
+**Step 8: Check Service Endpoints**
+```powershell
+# Check service endpoints
+kubectl get endpoints api-gateway
+kubectl get endpoints eureka-server
+
+# Describe service
+kubectl describe service api-gateway
+```
+
+**Step 9: Verify Database Pods**
+```powershell
+# Show database pods
+kubectl get pods | Select-String "db"
+
+# Check all running databases
+kubectl get pods -l app=userdb
+kubectl get pods -l app=employeedb
+kubectl get pods -l app=payrolldb
+kubectl get pods -l app=attendancedb
+```
+
+### Useful Kubernetes Commands
+
+```powershell
+# Check pod status
+kubectl get pods
+
+# Check services
+kubectl get services
+
+# View logs
+kubectl logs <pod-name>
+
+# Get pod details
+kubectl describe pod <pod-name>
+
+# Port forward
+kubectl port-forward service/api-gateway 8080:8080
+kubectl port-forward service/eureka-server 8761:8761
+
+# Delete deployment
+kubectl delete -f k8s/
+```
+
+---
+
 ## 🔌 API Endpoints
 
 All endpoints can be accessed via:

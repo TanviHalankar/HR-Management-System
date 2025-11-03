@@ -35,6 +35,33 @@ spec:
           value: "root"
         - name: MYSQL_DATABASE
           value: "employeedb"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
         volumeMounts:
         - name: employeedb-storage
           mountPath: /var/lib/mysql

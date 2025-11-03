@@ -25,9 +25,26 @@ spec:
           value: "https://github.com/TanviHalankar/hr-configs.git"
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL
           value: "main"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
         readinessProbe:
           httpGet:
             path: /actuator/health
             port: 8888
           initialDelaySeconds: 30
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8888
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
