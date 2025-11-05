@@ -1,0 +1,94 @@
+================================================================================
+FINAL FIX - REBUILD API GATEWAY AND FRONTEND
+================================================================================
+
+I've updated the CORS configuration to allow any origin.
+Now rebuild both API Gateway and Frontend:
+
+================================================================================
+STEP 1: REBUILD API GATEWAY (with updated CORS)
+================================================================================
+
+cd api-gateway
+mvn clean package -DskipTests
+docker build -t hr-management-system-api-gateway:latest .
+cd ..
+
+# Restart API Gateway
+docker stop api-gateway
+docker rm api-gateway
+docker-compose up -d api-gateway
+
+================================================================================
+STEP 2: REBUILD FRONTEND (with correct EC2 IP)
+================================================================================
+
+# Set EC2 IP
+EC2_IP="13.218.64.179"
+echo "EC2 IP: $EC2_IP"
+
+# Rebuild frontend with correct API URL
+cd frontend
+docker build --build-arg REACT_APP_API_BASE_URL=http://$EC2_IP:8080 -t hr-management-system-frontend:latest .
+cd ..
+
+# Stop and remove old frontend
+docker stop frontend
+docker rm frontend
+
+# Start new frontend
+docker-compose up -d frontend
+
+================================================================================
+STEP 3: VERIFY CONTAINERS
+================================================================================
+
+docker ps | grep -E "(frontend|api-gateway)"
+
+# Check logs
+docker logs frontend
+docker logs api-gateway
+
+================================================================================
+STEP 4: CONFIGURE EC2 SECURITY GROUP
+================================================================================
+
+Go to AWS Console -> EC2 -> Security Groups
+
+Add Inbound Rules:
+- Type: Custom TCP, Port: 3000, Source: 0.0.0.0/0 (Frontend)
+- Type: Custom TCP, Port: 8080, Source: 0.0.0.0/0 (API Gateway)
+- Type: Custom TCP, Port: 8761, Source: 0.0.0.0/0 (Eureka Server)
+
+SAVE THE RULES!
+
+================================================================================
+STEP 5: TEST ACCESS
+================================================================================
+
+After configuring Security Group:
+
+Frontend: http://13.218.64.179:3000
+API Gateway: http://13.218.64.179:8080
+Eureka: http://13.218.64.179:8761
+
+================================================================================
+QUICK FIX - ALL COMMANDS
+================================================================================
+
+# Rebuild API Gateway
+cd api-gateway && mvn clean package -DskipTests && docker build -t hr-management-system-api-gateway:latest . && cd ..
+docker stop api-gateway && docker rm api-gateway && docker-compose up -d api-gateway
+
+# Rebuild Frontend
+EC2_IP="13.218.64.179"
+cd frontend && docker build --build-arg REACT_APP_API_BASE_URL=http://$EC2_IP:8080 -t hr-management-system-frontend:latest . && cd ..
+docker stop frontend && docker rm frontend && docker-compose up -d frontend
+
+# Verify
+docker ps | grep -E "(frontend|api-gateway)"
+docker logs frontend | tail -20
+docker logs api-gateway | tail -20
+
+================================================================================
+

@@ -1,0 +1,148 @@
+================================================================================
+TROUBLESHOOT WEBSITE ACCESS ISSUE
+================================================================================
+
+All containers are running! Now check these:
+
+================================================================================
+STEP 1: GET EC2 PUBLIC IP
+================================================================================
+
+curl http://169.254.169.254/latest/meta-data/public-ipv4
+
+# Save this IP address
+
+================================================================================
+STEP 2: TEST CONNECTIVITY FROM EC2
+================================================================================
+
+# Test if services are accessible locally
+curl http://localhost:3000
+curl http://localhost:8080
+curl http://localhost:8761
+
+# Test if API Gateway is responding
+curl http://localhost:8080/actuator/health
+
+================================================================================
+STEP 3: CHECK EC2 SECURITY GROUP
+================================================================================
+
+Go to AWS Console -> EC2 -> Security Groups
+
+Add these Inbound Rules:
+- Type: Custom TCP, Port: 3000, Source: 0.0.0.0/0 (Frontend)
+- Type: Custom TCP, Port: 8080, Source: 0.0.0.0/0 (API Gateway)
+- Type: Custom TCP, Port: 8761, Source: 0.0.0.0/0 (Eureka Server)
+- Type: Custom TCP, Port: 8101, Source: 0.0.0.0/0 (User Service - optional)
+- Type: Custom TCP, Port: 8102, Source: 0.0.0.0/0 (Employee Service - optional)
+- Type: Custom TCP, Port: 8103, Source: 0.0.0.0/0 (Payroll Service - optional)
+- Type: Custom TCP, Port: 8104, Source: 0.0.0.0/0 (Attendance Service - optional)
+
+IMPORTANT: Security Group must allow these ports!
+
+================================================================================
+STEP 4: ACCESS THE WEBSITE
+================================================================================
+
+After configuring Security Group, access:
+
+Frontend: http://YOUR-EC2-PUBLIC-IP:3000
+API Gateway: http://YOUR-EC2-PUBLIC-IP:8080
+Eureka Dashboard: http://YOUR-EC2-PUBLIC-IP:8761
+
+Replace YOUR-EC2-PUBLIC-IP with the IP from Step 1
+
+================================================================================
+STEP 5: CHECK FRONTEND CONFIGURATION
+================================================================================
+
+The frontend needs to know the API Gateway URL. Check if it's configured correctly:
+
+# Check frontend container logs
+docker logs frontend
+
+# Check API Gateway logs
+docker logs api-gateway
+
+# Check if frontend can reach API Gateway
+docker exec frontend curl http://api-gateway:8080/actuator/health
+
+================================================================================
+STEP 6: TEST API GATEWAY
+================================================================================
+
+# From EC2, test API Gateway directly
+curl http://localhost:8080/actuator/health
+
+# Test a service endpoint
+curl http://localhost:8080/users/health
+curl http://localhost:8080/employees/health
+
+================================================================================
+STEP 7: CHECK CONTAINER LOGS FOR ERRORS
+================================================================================
+
+# Check all service logs
+docker logs api-gateway
+docker logs eureka-server
+docker logs user-service
+docker logs employee-service
+docker logs frontend
+
+# Look for errors, especially connection errors
+
+================================================================================
+STEP 8: VERIFY NETWORK CONNECTIVITY
+================================================================================
+
+# Check if containers are on same network
+docker network ls
+docker network inspect hr-management-system_hrms-network
+
+# Check if containers can communicate
+docker exec frontend ping -c 2 api-gateway
+docker exec api-gateway ping -c 2 eureka-server
+
+================================================================================
+STEP 9: CHECK BROWSER CONSOLE
+================================================================================
+
+When accessing http://EC2-IP:3000, open browser Developer Tools (F12)
+Check Console tab for JavaScript errors
+Check Network tab to see if API calls are failing
+
+Common issues:
+- CORS errors
+- API Gateway not reachable
+- Wrong API URL in frontend
+
+================================================================================
+STEP 10: VERIFY FRONTEND API URL
+================================================================================
+
+The frontend was built with: REACT_APP_API_BASE_URL=http://api-gateway:8080
+
+This works inside Docker network, but browser needs external URL.
+
+If frontend can't reach API, you may need to:
+1. Rebuild frontend with EC2 public IP
+2. Or use nginx proxy in frontend to forward API calls
+
+================================================================================
+QUICK FIX COMMANDS
+================================================================================
+
+# Get EC2 IP
+EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+echo "EC2 Public IP: $EC2_IP"
+
+# Test locally
+curl http://localhost:3000
+curl http://localhost:8080/actuator/health
+
+# Check container health
+docker ps --format "table {{.Names}}\t{{.Status}}"
+
+================================================================================
+

@@ -1,0 +1,125 @@
+================================================================================
+TROUBLESHOOTING GUIDE - FIX ISSUES
+================================================================================
+
+ISSUE 1: PODS ARE PENDING
+================================================================================
+
+Check why pods are pending:
+kubectl describe pod <pod-name>
+
+Check node resources:
+kubectl describe node
+kubectl top nodes
+
+If you see "Insufficient memory" or "Insufficient cpu", increase minikube resources:
+
+minikube stop
+minikube start --memory=4096 --cpus=2
+
+Then redeploy:
+kubectl delete -f k8s/
+# Then run deployment commands again
+
+================================================================================
+ISSUE 2: SERVICE NAME MISMATCH
+================================================================================
+
+The service name is "eureka-server" NOT "eureka-server-service"
+
+Correct commands:
+minikube service eureka-server --url
+minikube service api-gateway --url
+minikube service frontend-service --url
+
+================================================================================
+ISSUE 3: DOCKER COMPOSE ERROR
+================================================================================
+
+You're using minikube's Docker daemon. To use docker-compose:
+
+1. Exit minikube docker environment:
+   eval $(minikube docker-env -u)
+
+2. Then use docker-compose:
+   docker-compose up -d
+
+3. To go back to minikube:
+   eval $(minikube docker-env)
+
+================================================================================
+FIX PENDING PODS - RUN THESE COMMANDS
+================================================================================
+
+1. Check why pods are pending:
+   kubectl describe pod api-gateway-b545fc8d-l56kt
+   kubectl describe pod eureka-server-797c77c847-zknns
+
+2. Check node capacity:
+   kubectl describe node
+
+3. If resources are insufficient, increase minikube:
+   minikube stop
+   minikube start --memory=4096 --cpus=2
+   eval $(minikube docker-env)
+
+4. Delete and redeploy:
+   kubectl delete -f k8s/
+
+5. Redeploy (run all deployment commands again)
+
+================================================================================
+CORRECT SERVICE URL COMMANDS
+================================================================================
+
+Get service URLs:
+minikube service frontend-service --url
+minikube service api-gateway --url
+minikube service eureka-server --url
+
+Get EC2 Public IP:
+curl http://169.254.169.254/latest/meta-data/public-ipv4
+
+Get minikube IP:
+minikube ip
+
+Access URLs:
+Frontend: http://<MINIKUBE-IP>:30000
+API Gateway: http://<MINIKUBE-IP>:30080
+Eureka: http://<MINIKUBE-IP>:30761
+
+================================================================================
+CHECK POD STATUS IN DETAIL
+================================================================================
+
+Watch pods:
+kubectl get pods -w
+
+Check specific pod:
+kubectl describe pod <pod-name>
+
+View logs:
+kubectl logs <pod-name>
+kubectl logs -f <pod-name>
+
+Check events:
+kubectl get events --sort-by=.metadata.creationTimestamp
+
+================================================================================
+QUICK FIX - INCREASE MINIKUBE RESOURCES
+================================================================================
+
+minikube stop
+minikube start --memory=4096 --cpus=2
+eval $(minikube docker-env)
+
+Wait for minikube to be ready:
+kubectl get nodes
+
+Then redeploy everything:
+kubectl delete -f k8s/
+
+# Then run all deployment commands again
+
+================================================================================
+
