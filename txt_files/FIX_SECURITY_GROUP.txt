@@ -1,0 +1,103 @@
+================================================================================
+FIX SECURITY GROUP - STEP BY STEP
+================================================================================
+
+Your containers are running! The issue is Security Group configuration.
+
+================================================================================
+METHOD 1: AWS CONSOLE (RECOMMENDED)
+================================================================================
+
+1. Go to AWS Console: https://console.aws.amazon.com/ec2/
+2. Click "Instances" in left menu
+3. Find your instance (IP: 13.218.64.179)
+4. Select the instance
+5. Click on "Security" tab (bottom panel)
+6. Click on Security Group name (e.g., "sg-xxxxx")
+7. Click "Edit inbound rules" button
+8. Click "Add rule" button
+9. Add these 3 rules:
+
+   Rule 1:
+   - Type: Custom TCP
+   - Port range: 3000
+   - Source: Anywhere-IPv4 (0.0.0.0/0)
+   - Description: Frontend
+
+   Rule 2:
+   - Type: Custom TCP
+   - Port range: 8080
+   - Source: Anywhere-IPv4 (0.0.0.0/0)
+   - Description: API Gateway
+
+   Rule 3:
+   - Type: Custom TCP
+   - Port range: 8761
+   - Source: Anywhere-IPv4 (0.0.0.0/0)
+   - Description: Eureka Server
+
+10. Click "Save rules" button
+
+================================================================================
+METHOD 2: AWS CLI (IF INSTALLED)
+================================================================================
+
+# Get your Security Group ID
+SG_ID=$(aws ec2 describe-instances --instance-ids $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' --output text)
+
+echo "Security Group ID: $SG_ID"
+
+# Add rules (replace SG_ID with actual ID)
+aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 3000 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 8080 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id $SG_ID --protocol tcp --port 8761 --cidr 0.0.0.0/0
+
+================================================================================
+VERIFY SECURITY GROUP
+================================================================================
+
+After adding rules, verify in AWS Console:
+1. EC2 -> Security Groups
+2. Select your Security Group
+3. Check "Inbound rules" tab
+4. Should see:
+   - Port 3000 from 0.0.0.0/0
+   - Port 8080 from 0.0.0.0/0
+   - Port 8761 from 0.0.0.0/0
+
+================================================================================
+TEST AFTER CONFIGURING
+================================================================================
+
+After configuring Security Group, wait 10-30 seconds, then test:
+
+# From your local machine (not EC2):
+curl http://13.218.64.179:3000
+curl http://13.218.64.179:8080/actuator/health
+curl http://13.218.64.179:8761
+
+# Or open in browser:
+# http://13.218.64.179:3000
+
+================================================================================
+CHECK FIREWALL ON EC2 (IF SECURITY GROUP STILL DOESN'T WORK)
+================================================================================
+
+# Check if firewall is blocking (Amazon Linux 2)
+sudo systemctl status firewalld
+
+# If active, allow ports:
+sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --permanent --add-port=8761/tcp
+sudo firewall-cmd --reload
+
+# For Ubuntu:
+sudo ufw status
+sudo ufw allow 3000/tcp
+sudo ufw allow 8080/tcp
+sudo ufw allow 8761/tcp
+sudo ufw reload
+
+================================================================================
+
