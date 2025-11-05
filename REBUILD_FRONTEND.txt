@@ -1,0 +1,102 @@
+================================================================================
+REBUILD FRONTEND WITH FIXED API CONFIGURATION
+================================================================================
+
+I've updated the frontend configuration to use nginx proxy instead of direct API calls.
+Now rebuild and redeploy the frontend.
+
+================================================================================
+STEP 1: CHECK CURRENT STATUS
+================================================================================
+
+# Check if API Gateway pod is running
+kubectl get pods | grep api-gateway
+
+# Check API Gateway logs
+kubectl logs -l app=api-gateway --tail=50
+
+# Check if API Gateway service is accessible
+kubectl get service api-gateway
+
+================================================================================
+STEP 2: REBUILD FRONTEND
+================================================================================
+
+# Configure Docker for minikube
+eval $(minikube docker-env)
+
+# Rebuild frontend (uses relative /api path now)
+cd ~/HR-Management-System/frontend
+docker build --build-arg REACT_APP_API_BASE_URL=/api -t frontend:latest .
+cd ..
+
+================================================================================
+STEP 3: REDEPLOY FRONTEND
+================================================================================
+
+kubectl delete deployment frontend
+kubectl delete service frontend-service
+
+sleep 5
+
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/frontend-service.yaml
+
+================================================================================
+STEP 4: WAIT FOR FRONTEND POD TO BE READY
+================================================================================
+
+kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+
+# Check status
+kubectl get pods | grep frontend
+
+================================================================================
+STEP 5: VERIFY API GATEWAY IS RUNNING
+================================================================================
+
+# Check API Gateway pod
+kubectl get pods | grep api-gateway
+
+# If not running, check why
+kubectl describe pod -l app=api-gateway
+
+# Check logs
+kubectl logs -l app=api-gateway
+
+# If pod is pending, check node resources
+kubectl describe node
+
+================================================================================
+STEP 6: TEST API GATEWAY FROM INSIDE CLUSTER
+================================================================================
+
+# Test if API Gateway is accessible internally
+kubectl run curl-test --image=curlimages/curl:latest --rm -it --restart=Never -- curl http://api-gateway:8080/actuator/health
+
+# If this works, the API Gateway is running correctly
+
+================================================================================
+STEP 7: ACCESS FRONTEND
+================================================================================
+
+# Get EC2 Public IP
+EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+
+# Get minikube service URL
+minikube service frontend-service --url
+
+# Access frontend at: http://$EC2_IP:30000
+# API requests will be proxied through nginx to API Gateway
+
+================================================================================
+IMPORTANT NOTES
+================================================================================
+
+1. Frontend now uses relative path `/api` which nginx proxies to API Gateway
+2. API Gateway routes: /employees, /attendance, /payroll, /users
+3. Nginx will proxy: /api/employees -> http://api-gateway:8080/employees
+4. Make sure API Gateway pod is running before testing
+
+================================================================================
+

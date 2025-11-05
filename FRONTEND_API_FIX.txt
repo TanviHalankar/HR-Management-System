@@ -1,0 +1,113 @@
+================================================================================
+FIX FRONTEND API CONNECTION ISSUE
+================================================================================
+
+PROBLEM: Frontend is trying to connect to API Gateway at wrong URL
+- Frontend was built with: http://api-gateway:8080 (internal K8s name)
+- Browser needs external URL: http://EC2-IP:30080
+- API Gateway is exposed on NodePort 30080, not 8080
+
+SOLUTION: Rebuild frontend with correct API Gateway URL
+
+================================================================================
+STEP 1: GET YOUR EC2 PUBLIC IP
+================================================================================
+
+EC2_PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+echo "EC2 Public IP: $EC2_PUBLIC_IP"
+
+================================================================================
+STEP 2: REBUILD FRONTEND WITH CORRECT API URL
+================================================================================
+
+cd ~/HR-Management-System/frontend
+
+# Get EC2 IP
+EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+
+# Build with correct API Gateway URL (using NodePort 30080)
+docker build --build-arg REACT_APP_API_BASE_URL=http://$EC2_IP:30080 -t frontend:latest .
+
+# Go back to project root
+cd ..
+
+# Configure Docker for minikube
+eval $(minikube docker-env)
+
+# Rebuild frontend image in minikube
+cd frontend
+docker build --build-arg REACT_APP_API_BASE_URL=http://$EC2_IP:30080 -t frontend:latest .
+cd ..
+
+================================================================================
+STEP 3: REDEPLOY FRONTEND
+================================================================================
+
+kubectl delete deployment frontend
+kubectl delete service frontend-service
+
+sleep 5
+
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/frontend-service.yaml
+
+================================================================================
+STEP 4: CHECK POD STATUS
+================================================================================
+
+kubectl get pods | grep frontend
+kubectl get services | grep frontend
+
+# Wait for frontend pod to be Running
+kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+
+================================================================================
+STEP 5: VERIFY API GATEWAY IS ACCESSIBLE
+================================================================================
+
+# Check if API Gateway pod is running
+kubectl get pods | grep api-gateway
+
+# If not running, check logs
+kubectl logs -l app=api-gateway
+
+# Check API Gateway service
+kubectl get service api-gateway
+
+# Test API Gateway from inside cluster
+kubectl run curl-test --image=curlimages/curl:latest --rm -it --restart=Never -- curl http://api-gateway:8080/actuator/health
+
+================================================================================
+ALTERNATIVE: USE NGINX PROXY (BETTER SOLUTION)
+================================================================================
+
+Instead of rebuilding, configure nginx to proxy API requests.
+This way, frontend can use relative paths.
+
+Update frontend/nginx.conf to add proxy configuration.
+
+================================================================================
+QUICK FIX COMMANDS
+================================================================================
+
+# Get EC2 IP
+EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+
+# Rebuild frontend with correct URL
+cd frontend
+eval $(minikube docker-env)
+docker build --build-arg REACT_APP_API_BASE_URL=http://$EC2_IP:30080 -t frontend:latest .
+cd ..
+
+# Redeploy
+kubectl delete deployment frontend
+kubectl apply -f k8s/frontend-deployment.yaml
+
+# Wait for pod
+kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+
+# Check status
+kubectl get pods | grep frontend
+
+================================================================================
+

@@ -25,7 +25,7 @@ public class CorsConfig {
             String origin = request.getHeaders().getFirst(HttpHeaders.ORIGIN);
 
             // Add CORS headers to all responses
-            if (origin != null) {
+            if (origin != null && (origin.contains("localhost:3000") || origin.contains("localhost:3001"))) {
                 HttpHeaders headers = response.getHeaders();
                 
                 // Remove any existing CORS headers first to avoid duplicates
