@@ -30,8 +30,11 @@ services:
       - MYSQL_DATABASE=userdb
     ports:
       - "3310:3306"
+    volumes:
+      - userdb-data:/var/lib/mysql
     networks:
       - hrms-network
+    restart: unless-stopped
 
   # User Service
   user-service:
@@ -60,8 +63,11 @@ services:
       - MYSQL_DATABASE=employeedb
     ports:
       - "3307:3306"
+    volumes:
+      - employeedb-data:/var/lib/mysql
     networks:
       - hrms-network
+    restart: unless-stopped
 
   # Employee Service
   employee-service:
@@ -90,8 +96,11 @@ services:
       - MYSQL_DATABASE=payrolldb
     ports:
       - "3308:3306"
+    volumes:
+      - payrolldb-data:/var/lib/mysql
     networks:
       - hrms-network
+    restart: unless-stopped
 
   # Payroll Service
   payroll-service:
@@ -120,8 +129,11 @@ services:
       - MYSQL_DATABASE=attendancedb
     ports:
       - "3309:3306"
+    volumes:
+      - attendancedb-data:/var/lib/mysql
     networks:
       - hrms-network
+    restart: unless-stopped
 
   # Attendance Service
   attendance-service:
@@ -158,7 +170,29 @@ services:
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - REACT_APP_API_BASE_URL=http://api-gateway:8080
+    container_name: frontend
+    ports:
+      - "3000:80"
+    networks:
+      - hrms-network
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
 
 networks:
   hrms-network:
     driver: bridge
+
+volumes:
+  userdb-data:
+  employeedb-data:
+  payrolldb-data:
+  attendancedb-data:

@@ -1,0 +1,321 @@
+================================================================================
+AWS EC2 DEPLOYMENT STEPS FOR HR MANAGEMENT SYSTEM
+================================================================================
+
+PREREQUISITES COMPLETED:
+- EC2 instance created and accessible via SSH
+- Repository cloned on EC2 instance
+- Docker Desktop installed
+- Kubernetes (minikube) installed
+
+================================================================================
+STEP 1: CONNECT TO YOUR EC2 INSTANCE
+================================================================================
+
+1. Connect to your EC2 instance using SSH:
+   ssh -i your-key.pem ec2-user@your-ec2-ip-address
+
+   OR for Ubuntu:
+   ssh -i your-key.pem ubuntu@your-ec2-ip-address
+
+2. Navigate to the project directory:
+   cd HR-Management-System
+
+================================================================================
+STEP 2: INSTALL JAVA AND MAVEN
+================================================================================
+
+For Amazon Linux 2:
+sudo yum update -y
+sudo yum install java-17-amazon-corretto -y
+sudo yum install maven -y
+
+For Ubuntu:
+sudo apt update
+sudo apt install openjdk-17-jdk -y
+sudo apt install maven -y
+
+Verify installations:
+java -version
+mvn -version
+
+================================================================================
+STEP 3: CONFIGURE DOCKER FOR MINIKUBE
+================================================================================
+
+1. Start minikube:
+   minikube start
+
+2. Configure Docker to use minikube's Docker daemon:
+   eval $(minikube docker-env)
+
+3. Verify Docker is working:
+   docker ps
+
+================================================================================
+STEP 4: BUILD ALL DOCKER IMAGES
+================================================================================
+
+Run these commands one by one to build all Docker images:
+
+1. Build Frontend:
+   cd frontend
+   docker build --build-arg REACT_APP_API_BASE_URL=http://api-gateway:8080 -t frontend:latest .
+   cd ..
+
+2. Build Config Server:
+   cd config-server
+   mvn clean package -DskipTests
+   docker build -t config-server:latest .
+   cd ..
+
+3. Build Eureka Server:
+   cd eureka-server
+   mvn clean package -DskipTests
+   docker build -t eureka-server:latest .
+   cd ..
+
+4. Build API Gateway:
+   cd api-gateway
+   mvn clean package -DskipTests
+   docker build -t api-gateway:latest .
+   cd ..
+
+5. Build User Service:
+   cd user-service
+   mvn clean package -DskipTests
+   docker build -t user-service:latest .
+   cd ..
+
+6. Build Employee Service:
+   cd employee-service
+   mvn clean package -DskipTests
+   docker build -t employee-service:latest .
+   cd ..
+
+7. Build Payroll Service:
+   cd payroll-service
+   mvn clean package -DskipTests
+   docker build -t payroll-service:latest .
+   cd ..
+
+8. Build Attendance Service:
+   cd attendance-service
+   mvn clean package -DskipTests
+   docker build -t attendance-service:latest .
+   cd ..
+
+9. Verify images are built:
+   docker images | grep -E "(frontend|config-server|eureka-server|api-gateway|user-service|employee-service|payroll-service|attendance-service)"
+
+================================================================================
+STEP 5: DEPLOY TO KUBERNETES
+================================================================================
+
+Run these commands in order to deploy all services:
+
+1. Deploy Databases:
+   kubectl apply -f k8s/userdb-deployment.yaml
+   kubectl apply -f k8s/userdb-service.yaml
+   kubectl apply -f k8s/employeedb-deployment.yaml
+   kubectl apply -f k8s/employeedb-service.yaml
+   kubectl apply -f k8s/payrolldb-deployment.yaml
+   kubectl apply -f k8s/payrolldb-service.yaml
+   kubectl apply -f k8s/attendancedb-deployment.yaml
+   kubectl apply -f k8s/attendancedb-service.yaml
+
+   Wait 30 seconds for databases to start:
+   sleep 30
+
+2. Deploy Config Server:
+   kubectl apply -f k8s/config-server-deployment.yaml
+   kubectl apply -f k8s/config-server-service.yaml
+
+   Wait 15 seconds:
+   sleep 15
+
+3. Deploy Eureka Server:
+   kubectl apply -f k8s/eureka-server-deployment.yaml
+   kubectl apply -f k8s/eureka-server-service.yaml
+
+   Wait 30 seconds:
+   sleep 30
+
+4. Deploy Microservices:
+   kubectl apply -f k8s/user-service-deployment.yaml
+   kubectl apply -f k8s/user-service-service.yaml
+   kubectl apply -f k8s/employee-service-deployment.yaml
+   kubectl apply -f k8s/employee-service-service.yaml
+   kubectl apply -f k8s/payroll-service-deployment.yaml
+   kubectl apply -f k8s/payroll-service-service.yaml
+   kubectl apply -f k8s/attendance-service-deployment.yaml
+   kubectl apply -f k8s/attendance-service-service.yaml
+
+   Wait 30 seconds:
+   sleep 30
+
+5. Deploy API Gateway:
+   kubectl apply -f k8s/api-gateway-deployment.yaml
+   kubectl apply -f k8s/api-gateway-service.yaml
+
+   Wait 15 seconds:
+   sleep 15
+
+6. Deploy Frontend:
+   kubectl apply -f k8s/frontend-deployment.yaml
+   kubectl apply -f k8s/frontend-service.yaml
+
+7. Monitor deployment progress:
+   kubectl get pods -w
+
+8. Check all pods are running (in another terminal):
+   kubectl get pods
+
+   Wait until all pods show "Running" status.
+
+================================================================================
+STEP 6: CONFIGURE EC2 SECURITY GROUP
+================================================================================
+
+1. Go to AWS Console -> EC2 -> Security Groups
+2. Select your EC2 instance's security group
+3. Add Inbound Rules:
+   - Type: Custom TCP, Port: 30000, Source: 0.0.0.0/0 (Frontend)
+   - Type: Custom TCP, Port: 30080, Source: 0.0.0.0/0 (API Gateway)
+   - Type: Custom TCP, Port: 30761, Source: 0.0.0.0/0 (Eureka Server)
+
+================================================================================
+STEP 7: ACCESS THE APPLICATION
+================================================================================
+
+1. Get the EC2 instance public IP:
+   curl http://169.254.169.254/latest/meta-data/public-ipv4
+
+   OR check in AWS Console
+
+2. Get minikube service URLs:
+   minikube service frontend-service --url
+   minikube service api-gateway --url
+   minikube service eureka-server-service --url
+
+3. Access the application:
+   Frontend: http://YOUR-EC2-IP:30000
+   API Gateway: http://YOUR-EC2-IP:30080
+   Eureka Dashboard: http://YOUR-EC2-IP:30761
+
+   OR use minikube tunnel (if running on EC2):
+   minikube tunnel
+   Then access via localhost ports
+
+================================================================================
+STEP 8: TROUBLESHOOTING
+================================================================================
+
+1. Check pod status:
+   kubectl get pods
+   kubectl describe pod <pod-name>
+
+2. Check pod logs:
+   kubectl logs <pod-name>
+   kubectl logs -f <pod-name>  (follow logs)
+
+3. Check services:
+   kubectl get services
+
+4. Restart a deployment:
+   kubectl rollout restart deployment <deployment-name>
+
+5. Delete and redeploy:
+   kubectl delete -f k8s/
+   # Then run all deployment commands from STEP 5 again
+
+6. Check minikube status:
+   minikube status
+   minikube dashboard
+
+7. If pods are not starting:
+   - Check resource limits: kubectl describe node
+   - Increase minikube resources: minikube start --memory=4096 --cpus=2
+
+================================================================================
+STEP 9: ALTERNATIVE - USING DOCKER COMPOSE
+================================================================================
+
+If you prefer to use Docker Compose instead of Kubernetes:
+
+1. Build and start all services:
+   docker-compose up -d
+
+2. Check status:
+   docker-compose ps
+
+3. View logs:
+   docker-compose logs -f
+
+4. Stop services:
+   docker-compose down
+
+5. Access services:
+   Frontend: http://YOUR-EC2-IP:3000
+   API Gateway: http://YOUR-EC2-IP:8080
+   Eureka: http://YOUR-EC2-IP:8761
+
+================================================================================
+STEP 10: PERSISTENT DATA
+================================================================================
+
+MySQL databases are configured with persistent volumes in Kubernetes.
+Data will persist even if pods are restarted.
+
+To backup database data:
+1. Access MySQL pod:
+   kubectl exec -it <db-pod-name> -- mysql -u root -proot
+
+2. Export data:
+   kubectl exec -it <db-pod-name> -- mysqldump -u root -proot <database-name> > backup.sql
+
+================================================================================
+STEP 11: MONITORING AND LOGS
+================================================================================
+
+1. View all logs:
+   kubectl logs -f deployment/<deployment-name>
+
+2. View logs from all pods:
+   kubectl logs -f -l app=<app-name>
+
+3. Access minikube dashboard:
+   minikube dashboard
+
+4. Check resource usage:
+   kubectl top nodes
+   kubectl top pods
+
+================================================================================
+STEP 12: SCALING SERVICES
+================================================================================
+
+To scale a service:
+kubectl scale deployment <deployment-name> --replicas=3
+
+Example:
+kubectl scale deployment user-service --replicas=2
+
+================================================================================
+IMPORTANT NOTES:
+================================================================================
+
+1. All services use internal Kubernetes DNS for communication
+2. Database passwords are set to "root" - change in production
+3. Services are exposed via NodePort for external access
+4. Make sure EC2 security group allows traffic on required ports
+5. For production, consider using:
+   - Kubernetes Ingress
+   - SSL/TLS certificates
+   - Secret management for credentials
+   - Resource monitoring and auto-scaling
+
+================================================================================
+END OF DEPLOYMENT STEPS
+================================================================================
+

@@ -1,0 +1,222 @@
+================================================================================
+AWS EC2 - DIRECT COMMANDS TO RUN
+================================================================================
+
+Copy and paste these commands directly into your EC2 terminal.
+
+================================================================================
+STEP 1: INSTALL JAVA AND MAVEN
+================================================================================
+
+For Amazon Linux 2:
+sudo yum update -y
+sudo yum install java-17-amazon-corretto -y
+sudo yum install maven -y
+java -version
+mvn -version
+
+For Ubuntu:
+sudo apt update
+sudo apt install openjdk-17-jdk -y
+sudo apt install maven -y
+java -version
+mvn -version
+
+================================================================================
+STEP 2: START MINIKUBE AND CONFIGURE DOCKER
+================================================================================
+
+minikube start
+eval $(minikube docker-env)
+docker ps
+
+================================================================================
+STEP 3: BUILD ALL DOCKER IMAGES
+================================================================================
+
+cd ~/HR-Management-System
+
+# Build Frontend
+cd frontend && docker build --build-arg REACT_APP_API_BASE_URL=http://api-gateway:8080 -t frontend:latest . && cd ..
+
+# Build Config Server
+cd config-server && mvn clean package -DskipTests && docker build -t config-server:latest . && cd ..
+
+# Build Eureka Server
+cd eureka-server && mvn clean package -DskipTests && docker build -t eureka-server:latest . && cd ..
+
+# Build API Gateway
+cd api-gateway && mvn clean package -DskipTests && docker build -t api-gateway:latest . && cd ..
+
+# Build User Service
+cd user-service && mvn clean package -DskipTests && docker build -t user-service:latest . && cd ..
+
+# Build Employee Service
+cd employee-service && mvn clean package -DskipTests && docker build -t employee-service:latest . && cd ..
+
+# Build Payroll Service
+cd payroll-service && mvn clean package -DskipTests && docker build -t payroll-service:latest . && cd ..
+
+# Build Attendance Service
+cd attendance-service && mvn clean package -DskipTests && docker build -t attendance-service:latest . && cd ..
+
+# Verify images
+docker images | grep -E "(frontend|config-server|eureka-server|api-gateway|user-service|employee-service|payroll-service|attendance-service)"
+
+================================================================================
+STEP 4: DEPLOY TO KUBERNETES
+================================================================================
+
+# Deploy Databases
+kubectl apply -f k8s/userdb-deployment.yaml
+kubectl apply -f k8s/userdb-service.yaml
+kubectl apply -f k8s/employeedb-deployment.yaml
+kubectl apply -f k8s/employeedb-service.yaml
+kubectl apply -f k8s/payrolldb-deployment.yaml
+kubectl apply -f k8s/payrolldb-service.yaml
+kubectl apply -f k8s/attendancedb-deployment.yaml
+kubectl apply -f k8s/attendancedb-service.yaml
+
+sleep 30
+
+# Deploy Config Server
+kubectl apply -f k8s/config-server-deployment.yaml
+kubectl apply -f k8s/config-server-service.yaml
+
+sleep 15
+
+# Deploy Eureka Server
+kubectl apply -f k8s/eureka-server-deployment.yaml
+kubectl apply -f k8s/eureka-server-service.yaml
+
+sleep 30
+
+# Deploy Microservices
+kubectl apply -f k8s/user-service-deployment.yaml
+kubectl apply -f k8s/user-service-service.yaml
+kubectl apply -f k8s/employee-service-deployment.yaml
+kubectl apply -f k8s/employee-service-service.yaml
+kubectl apply -f k8s/payroll-service-deployment.yaml
+kubectl apply -f k8s/payroll-service-service.yaml
+kubectl apply -f k8s/attendance-service-deployment.yaml
+kubectl apply -f k8s/attendance-service-service.yaml
+
+sleep 30
+
+# Deploy API Gateway
+kubectl apply -f k8s/api-gateway-deployment.yaml
+kubectl apply -f k8s/api-gateway-service.yaml
+
+sleep 15
+
+# Deploy Frontend
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl apply -f k8s/frontend-service.yaml
+
+# Check status
+kubectl get pods
+
+================================================================================
+STEP 5: GET SERVICE URLs
+================================================================================
+
+# Get EC2 Public IP
+curl http://169.254.169.254/latest/meta-data/public-ipv4
+
+# Get Minikube IP
+minikube ip
+
+# Get Service URLs
+minikube service frontend-service --url
+minikube service api-gateway --url
+minikube service eureka-server-service --url
+
+================================================================================
+STEP 6: MONITOR DEPLOYMENT
+================================================================================
+
+# Watch pods
+kubectl get pods -w
+
+# Check all resources
+kubectl get all
+
+# View logs
+kubectl logs -f deployment/frontend
+kubectl logs -f deployment/api-gateway
+kubectl logs -f deployment/user-service
+
+# Check service status
+kubectl get services
+
+================================================================================
+STEP 7: TROUBLESHOOTING COMMANDS
+================================================================================
+
+# Describe a pod
+kubectl describe pod <pod-name>
+
+# Check pod events
+kubectl get events --sort-by=.metadata.creationTimestamp
+
+# Restart a deployment
+kubectl rollout restart deployment <deployment-name>
+
+# Delete everything and redeploy
+kubectl delete -f k8s/
+
+# Check minikube status
+minikube status
+minikube dashboard
+
+# Increase minikube resources if needed
+minikube stop
+minikube start --memory=4096 --cpus=2
+
+================================================================================
+ALTERNATIVE: DOCKER COMPOSE DEPLOYMENT
+================================================================================
+
+# Build and start all services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Access services (configure Security Group ports 3000, 8080, 8761)
+# Frontend: http://EC2-IP:3000
+# API Gateway: http://EC2-IP:8080
+# Eureka: http://EC2-IP:8761
+
+================================================================================
+SECURITY GROUP CONFIGURATION
+================================================================================
+
+Go to AWS Console -> EC2 -> Security Groups and add these inbound rules:
+
+- Type: Custom TCP, Port: 30000, Source: 0.0.0.0/0 (Frontend)
+- Type: Custom TCP, Port: 30080, Source: 0.0.0.0/0 (API Gateway)
+- Type: Custom TCP, Port: 30761, Source: 0.0.0.0/0 (Eureka Server)
+
+OR for Docker Compose:
+- Type: Custom TCP, Port: 3000, Source: 0.0.0.0/0 (Frontend)
+- Type: Custom TCP, Port: 8080, Source: 0.0.0.0/0 (API Gateway)
+- Type: Custom TCP, Port: 8761, Source: 0.0.0.0/0 (Eureka Server)
+
+================================================================================
+ACCESS THE APPLICATION
+================================================================================
+
+After deployment, access using:
+- Frontend: http://YOUR-EC2-PUBLIC-IP:30000
+- API Gateway: http://YOUR-EC2-PUBLIC-IP:30080
+- Eureka Dashboard: http://YOUR-EC2-PUBLIC-IP:30761
+
+================================================================================
+
