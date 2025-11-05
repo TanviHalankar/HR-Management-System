@@ -1,0 +1,108 @@
+================================================================================
+FIX DOCKER COMPOSE ISSUE
+================================================================================
+
+PROBLEM: You're using minikube's Docker daemon, but docker-compose needs
+the regular Docker daemon.
+
+SOLUTION: Exit minikube docker environment first, then use docker-compose.
+
+================================================================================
+STEP 1: EXIT MINIKUBE DOCKER ENVIRONMENT
+================================================================================
+
+# Exit minikube docker environment
+eval $(minikube docker-env -u)
+
+# Verify you're using regular Docker
+docker ps
+
+# Check Docker context
+docker context ls
+
+================================================================================
+STEP 2: USE DOCKER COMPOSE
+================================================================================
+
+# Now docker-compose will work
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+================================================================================
+STEP 3: CHECK SERVICE STATUS
+================================================================================
+
+# Check all containers
+docker-compose ps
+
+# Check logs for specific service
+docker-compose logs api-gateway
+docker-compose logs frontend
+
+# Check if services are running
+docker ps
+
+================================================================================
+STEP 4: ACCESS SERVICES
+================================================================================
+
+# Get EC2 Public IP
+EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+
+# Access services:
+# Frontend: http://$EC2_IP:3000
+# API Gateway: http://$EC2_IP:8080
+# Eureka: http://$EC2_IP:8761
+
+echo "Frontend: http://$EC2_IP:3000"
+echo "API Gateway: http://$EC2_IP:8080"
+echo "Eureka: http://$EC2_IP:8761"
+
+================================================================================
+STEP 5: IF STILL HAVING ISSUES
+================================================================================
+
+# Restart Docker service
+sudo systemctl restart docker
+
+# Check Docker status
+sudo systemctl status docker
+
+# Try again
+docker-compose up -d --build
+
+================================================================================
+TO SWITCH BACK TO MINIKUBE
+================================================================================
+
+# When you want to use Kubernetes again:
+eval $(minikube docker-env)
+
+# Then use kubectl commands
+
+================================================================================
+QUICK COMMANDS
+================================================================================
+
+# Exit minikube docker environment
+eval $(minikube docker-env -u)
+
+# Use docker-compose
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+================================================================================
+
