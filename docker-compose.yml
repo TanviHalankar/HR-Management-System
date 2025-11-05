@@ -48,7 +48,7 @@ services:
       - eureka-server
       - userdb
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://userdb:3306/userdb
+      - SPRING_DATASOURCE_URL=jdbc:mysql://userdb:3306/userdb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
@@ -81,7 +81,7 @@ services:
       - eureka-server
       - employeedb
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://employeedb:3306/employeedb
+      - SPRING_DATASOURCE_URL=jdbc:mysql://employeedb:3306/employeedb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
@@ -114,7 +114,7 @@ services:
       - eureka-server
       - payrolldb
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://payrolldb:3306/payrolldb
+      - SPRING_DATASOURCE_URL=jdbc:mysql://payrolldb:3306/payrolldb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
@@ -147,7 +147,7 @@ services:
       - eureka-server
       - attendancedb
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://attendancedb:3306/attendancedb
+      - SPRING_DATASOURCE_URL=jdbc:mysql://attendancedb:3306/attendancedb?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
@@ -177,7 +177,7 @@ services:
     build:
       context: ./frontend
       args:
-        - REACT_APP_API_BASE_URL=http://api-gateway:8080
+        - REACT_APP_API_BASE_URL=/api
     container_name: frontend
     ports:
       - "3000:80"

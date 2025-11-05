@@ -1,0 +1,128 @@
+================================================================================
+EXIT MINIKUBE DOCKER ENVIRONMENT - FIX COMMANDS
+================================================================================
+
+PROBLEM: Docker commands are trying to connect to minikube's Docker daemon
+which is timing out (192.168.49.2:2376).
+
+SOLUTION: Exit minikube docker environment and use regular Docker.
+
+================================================================================
+STEP 1: EXIT MINIKUBE DOCKER ENVIRONMENT
+================================================================================
+
+# Method 1: Unset minikube docker environment variables
+eval $(minikube docker-env -u)
+
+# Method 2: If that doesn't work, manually unset variables
+unset DOCKER_TLS_VERIFY
+unset DOCKER_HOST
+unset DOCKER_CERT_PATH
+unset MINIKUBE_ACTIVE_DOCKERD
+
+================================================================================
+STEP 2: VERIFY DOCKER ENVIRONMENT IS CLEARED
+================================================================================
+
+# Check environment variables
+echo $DOCKER_HOST
+# Should be empty or show regular Docker socket
+
+# Check Docker context
+docker context ls
+
+# Try docker ps
+docker ps
+
+# If it still fails, restart Docker service
+sudo systemctl restart docker
+
+================================================================================
+STEP 3: USE REGULAR DOCKER
+================================================================================
+
+# Now docker commands should work
+docker ps
+docker images
+
+# Use docker-compose
+docker-compose ps
+docker-compose up -d --build
+
+================================================================================
+STEP 4: IF STILL HAVING ISSUES
+================================================================================
+
+# Check Docker service status
+sudo systemctl status docker
+
+# Restart Docker service
+sudo systemctl restart docker
+
+# Check if Docker is running
+sudo systemctl status docker
+
+# Try docker commands again
+docker ps
+
+================================================================================
+STEP 5: CHECK DOCKER SOCKET
+================================================================================
+
+# Check if Docker socket exists
+ls -la /var/run/docker.sock
+
+# If it doesn't exist, Docker service might not be running
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Check Docker version
+docker version
+
+================================================================================
+QUICK FIX - COPY AND PASTE
+================================================================================
+
+# Exit minikube docker environment
+unset DOCKER_TLS_VERIFY
+unset DOCKER_HOST
+unset DOCKER_CERT_PATH
+unset MINIKUBE_ACTIVE_DOCKERD
+
+# Verify environment is cleared
+echo "DOCKER_HOST: $DOCKER_HOST"
+# Should be empty
+
+# Restart Docker service
+sudo systemctl restart docker
+
+# Wait a moment
+sleep 2
+
+# Test Docker
+docker ps
+
+# If it works, use docker-compose
+docker-compose ps
+
+================================================================================
+ALTERNATIVE: USE DOCKER CONTEXT
+================================================================================
+
+# List Docker contexts
+docker context ls
+
+# Use default context
+docker context use default
+
+# Or create a new context
+docker context create default --docker "host=unix:///var/run/docker.sock"
+
+# Use it
+docker context use default
+
+# Test
+docker ps
+
+================================================================================
+
